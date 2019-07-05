@@ -31,6 +31,7 @@
  * @description 图片上传组件
  */
 import Uploader from '.Uploader';
+import { dataURLtoFile } from '@/utils/imageUtil';
 
 export default {
     name: 'imagesPC',
@@ -92,16 +93,26 @@ export default {
                 // 解决跨域 Canvas 污染问题
                 image.setAttribute('crossOrigin', 'anonymous');
                 image.onload = () => {
+                    // 将图片绘制在canvas上
                     const canvas = document.createElement('canvas');
                     canvas.width = image.width;
                     canvas.height = image.height;
                     const context = canvas.getContext('2d');
                     context.drawImage(image, 0, 0, image.width, image.height);
-                    const url = canvas.toDataURL('image/png'); // 得到图片的base64编码数据
-                    const a = document.createElement('a'); // 生成一个a元素
-                    const event = new MouseEvent('click'); // 创建一个单击事件
-                    a.download = name || 'photo'; // 设置图片名称
-                    a.href = url; // 将生成的URL设置为a.href属性
+
+                    // 将canvas转为base64, 得到图片的base64编码数据
+                    const url = canvas.toDataURL('image/png');
+
+                    // 图片太大，base64会很大，导致a.href放不下，下载网络错误，所以将base64转为本地文件
+                    const imageFile = dataURLtoFile(url, name);
+                    const imageBlob = URL.createObjectURL(imageFile);
+
+                    // 生成一个a元素, 创建一个单击事件
+                    const a = document.createElement('a');
+                    const event = new MouseEvent('click');
+
+                    a.download = name; // 设置图片名称
+                    a.href = imageBlob; // 将生成的URL设置为a.href属性
                     a.dispatchEvent(event); // 触发a的单击事件
                 };
                 image.src = imgsrc;
